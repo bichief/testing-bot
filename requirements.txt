@@ -6,3 +6,4 @@ python-dotenv
 pillow
 Django
 psycopg2
+qrcode

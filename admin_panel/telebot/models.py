@@ -31,7 +31,8 @@ class Groups(models.Model):
         return self.group_name
 
     class Meta:
-        verbose_name_plural = 'Группы'
+        verbose_name = 'Группу'
+        verbose_name_plural = '2. Группы'
 
 
 class Students(CreatedModel):
@@ -68,7 +69,8 @@ class Students(CreatedModel):
         return self.name
 
     class Meta:
-        verbose_name_plural = 'Студенты'
+        verbose_name = 'Студента'
+        verbose_name_plural = '1. Студенты'
 
 
 class Lessons(models.Model):
@@ -81,6 +83,10 @@ class Lessons(models.Model):
 
     def __str__(self):
         return self.lesson_name
+
+    class Meta:
+        verbose_name = 'Дисциплину'
+        verbose_name_plural = '3. Дисциплины'
 
 
 class Categories(models.Model):
@@ -100,6 +106,13 @@ class Categories(models.Model):
         help_text='Дисциплина',
         verbose_name='Дисциплина'
     )
+
+    def __str__(self):
+        return self.category_name
+
+    class Meta:
+        verbose_name = 'Категорию вопросов'
+        verbose_name_plural = '4. Категории вопросов'
 
 
 class Questions(models.Model):
@@ -132,4 +145,32 @@ class Questions(models.Model):
         null=True,
         help_text='Категория вопроса',
         verbose_name='Категория вопроса'
+    )
+
+    def __str__(self):
+        return self.question
+
+    class Meta:
+        verbose_name = 'Вопрос'
+        verbose_name_plural = '5. Вопросы'
+
+
+class Tests(models.Model):
+    group = models.CharField(
+        max_length=500,
+        null=True
+    )
+
+    lesson = models.CharField(
+        max_length=500,
+        null=True
+    )
+
+    categories = models.CharField(
+        max_length=1000,
+        null=True
+    )
+
+    teacher_id = models.BigIntegerField(
+
     )

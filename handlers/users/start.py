@@ -5,7 +5,8 @@ from aiogram.utils.deep_linking import decode_payload
 
 from loader import dp
 from states.get_name import GetName
-from utils.db_api.db_commands import get_all_groups, create_student, update_student_name, get_all_groups_pk
+from utils.db_api.db_commands import get_all_groups, create_student, update_student_name, get_all_groups_pk, \
+    get_group_by_pk
 
 
 @dp.message_handler(CommandStart())
@@ -17,11 +18,11 @@ async def start_cmd(message: types.Message):
     else:
         payload = decode_payload(deep_link)
         if int(payload) in groups:
-
+            group = await get_group_by_pk(int(payload))
             await create_student(
                 telegram_id=message.from_user.id,
                 username=message.from_user.username,
-                group=deep_link
+                group=group.group_name
             )
             await message.answer('✅Отлично!\n\n'
                                  '✍️<b> Теперь отправь мне свое Имя и Фамилию, как записано в журнале</b>\n\n'

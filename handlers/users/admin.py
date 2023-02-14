@@ -1,14 +1,18 @@
 from aiogram import types
 from aiogram.dispatcher.filters import Command, Text
+from aiogram.utils.exceptions import BotBlocked
 
 from keyboards.inline.admin_final import admin_final_menu
 from keyboards.inline.admin_menu import menu
 from keyboards.inline.categories_keyboard import categories_keyboard, edited_categories_keyboard
 from keyboards.inline.groups_keyboard import groups_keyboard
 from keyboards.inline.lessons_keyboard import lesson_keyboard
+from keyboards.inline.start_testing_students import go_test
 from loader import dp
+from states.start_student_test import StartTesting
 from utils.db_api.db_commands import get_all_groups, update_tests_group, get_lessons, update_tests_lesson, \
-    get_categories, update_category, get_categories_test, delete_test_row, get_test_teacher_id
+    get_categories, update_category, get_categories_test, delete_test_row, get_test_teacher_id, get_students_group, \
+    get_all_categories
 
 
 @dp.message_handler(Command('admin'))
@@ -49,8 +53,7 @@ async def get_admin_lesson(call: types.CallbackQuery):
     lesson = call.data.split('_')[1]
     await update_tests_lesson(lesson=lesson, telegram_id=call.from_user.id)
 
-    categories = await get_categories(lesson)
-    keyboard = await categories_keyboard(categories)
+    keyboard = await categories_keyboard(lesson)
 
     await call.message.edit_text(f'Выберите необходимые категории вопросов для Дисциплины <b>{lesson}</b>',
                                  reply_markup=keyboard)
@@ -66,10 +69,9 @@ async def change_state_category(call: types.CallbackQuery):
     data = await get_categories_test(call.from_user.id)
 
     categories = data.split(" ")
-    del categories[0]
 
     await call.message.edit_text(f'Выберите необходимые категории вопросов для Дисциплины <b>{lesson}</b>\n\n'
-                                 f'Сейчас выбраны следующие категории: <b>{", ".join(categories)}</b>',
+                                 f'Сейчас выбраны следующие категории: <b>{" ".join(categories)}</b>',
                                  reply_markup=keyboard)
 
 
@@ -78,11 +80,32 @@ async def pre_check_test(call: types.CallbackQuery):
     data = await get_test_teacher_id(call.from_user.id)
     categories = data.categories.split(" ")
     del categories[0]
+    good_categories = await get_all_categories(categories)
+
     await call.message.edit_text(f'Тестирование для группы {data.group}\n'
                                  f'Дисциплина: {data.lesson}\n\n'
-                                 f'Категории вопросов: {", ".join(categories)}\n\n'
+                                 f'Категории вопросов: {" ".join(good_categories)}\n\n'
                                  f'<b>Выберите необходимое действие на клавиатуре:</b>', reply_markup=admin_final_menu)
+
 
 @dp.callback_query_handler(Text(equals='start_test'))
 async def start_testing(call: types.CallbackQuery):
-    students = ''
+    data = await get_test_teacher_id(call.from_user.id)
+    students = await get_students_group(data.group)
+    keyboard = await go_test(test_id=data.id)
+    await call.message.edit_text('Тестирование было успешно начато!\n'
+                                 'Начинаю рассылку по студентам')
+    for i in range(len(students)):
+        state = dp.current_state(user=students[i].telegram_id)
+        await state.set_state(StartTesting.test)
+        try:
+            await dp.bot.send_message(
+                chat_id=students[i].telegram_id,
+                text=f'👋 Началось новое тестирование для группы <b>{data.group}</b>!\n'
+                     f'👨‍💻 Дисциплина - {data.lesson}\n\n'
+                     f'✍ Нажми️ на кнопку ниже, чтобы приступить к решению вопросов\n'
+                     f'🤞 Удачи!',
+                reply_markup=keyboard
+            )
+        except BotBlocked:
+            await call.message.answer(f'❌ Сообщение о начале тестирования не доставлено до {students[i].name}')

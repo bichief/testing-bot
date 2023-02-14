@@ -1,8 +1,11 @@
+import os
+
 import qrcode
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 from aiogram.types import InputFile
+from aiogram.utils.deep_linking import get_start_link
 
 from loader import dp
 from states.get_group import GetGroup
@@ -22,14 +25,17 @@ async def creating_qr(message: types.Message, state: FSMContext):
     await state.reset_state(True)
 
     group = message.text
-    url = 'https://t.me/CollegeTelBot?start='
-    await create_group(group)
 
-    img = qrcode.make(url + group)
+    data = await create_group(group)
+    link = await get_start_link(data, encode=True)
+    print(link)
+    img = qrcode.make(link)
     img.save(f'QR Codes/{group}_qr.png')
     photo = InputFile(f'QR Codes/{group}_qr.png')
+
     await message.answer_photo(
         photo=photo,
         caption=f'QR код для группы {group} успешно создан!\n\n'
                 f'Поделитесь фото со студентами или распечатайте его.'
     )
+    os.remove(f'QR Codes/{group}_qr.png')

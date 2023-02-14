@@ -1,20 +1,22 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart
+from aiogram.utils.deep_linking import decode_payload
 
 from loader import dp
 from states.get_name import GetName
-from utils.db_api.db_commands import get_all_groups, create_student, update_student_name
+from utils.db_api.db_commands import get_all_groups, create_student, update_student_name, get_all_groups_pk
 
 
 @dp.message_handler(CommandStart())
 async def start_cmd(message: types.Message):
     deep_link = message.get_args()
-    groups = await get_all_groups()
+    groups = await get_all_groups_pk()
     if deep_link == '':
         await message.answer('☹️ <b>Бот доступен только студентам СКТ</b>')
     else:
-        if deep_link in groups:
+        payload = decode_payload(deep_link)
+        if int(payload) in groups:
 
             await create_student(
                 telegram_id=message.from_user.id,
@@ -28,7 +30,7 @@ async def start_cmd(message: types.Message):
             await GetName.name.set()
 
         else:
-            await message.answer('⛔️ Неккоректная кодировка группы.')
+            await message.answer('⛔️ Некорректная кодировка группы.')
 
 
 @dp.message_handler(state=GetName.name)
@@ -44,4 +46,5 @@ async def get_student_name(message: types.Message, state: FSMContext):
     await message.answer(f'👋 Приятно познакомиться, <b>{name.split(" ")[0]}</b>!\n'
                          f'🤖 Я - Бот СКТ, который поможет всем преподавателям и студентам в прохождении тестов!\n\n'
                          f'🤔 Что делать дальше?\n'
-                         f'👉 Осталось дело за малым - ждать теста. Как только преподаватель отправит новый тест, я сразу сообщу тебе об этом!')
+                         f'👉 Осталось дело за малым - ждать теста. Как только преподаватель отправит новый тест, '
+                         f'я сразу сообщу тебе об этом!')

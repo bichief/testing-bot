@@ -147,6 +147,16 @@ class Questions(models.Model):
         verbose_name='Категория вопроса'
     )
 
+    lesson = models.ForeignKey(
+        Lessons,
+        on_delete=models.CASCADE,
+        related_name='question_lesson',
+        blank=True,
+        null=True,
+        help_text='Дисциплина',
+        verbose_name='Дисциплина'
+    )
+
     def __str__(self):
         return self.question
 

@@ -9,6 +9,7 @@ class StudentsAdmin(admin.ModelAdmin):
         'username',
         'name',
         'group',
+        'amount_correct_answers',
     )
 
     list_display_links = ('name',)

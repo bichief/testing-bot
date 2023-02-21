@@ -1,6 +1,6 @@
 from asgiref.sync import sync_to_async
 
-from admin_panel.telebot.models import Groups, Students, Tests, Lessons, Categories
+from admin_panel.telebot.models import Groups, Students, Tests, Lessons, Categories, Questions
 
 
 @sync_to_async()
@@ -109,3 +109,35 @@ def get_all_categories(list_pk):
         array.append(category_name)
 
     return array
+
+
+@sync_to_async()
+def add_questions_test(categories, teacher_id):
+    string_questions = ''
+    for category_id in categories:
+        questions = Questions.objects.filter(category_id=category_id).order_by('?')[:5]
+        for question in questions:
+            string_questions += f'{question.pk} '
+
+    Tests.objects.filter(teacher_id=teacher_id).update(questions=string_questions)
+
+
+@sync_to_async()
+def get_question_id(pk):
+    return Questions.objects.filter(pk=pk).first()
+
+
+@sync_to_async()
+def update_correct_answers(student_id, value):
+    old_amount = Students.objects.filter(telegram_id=student_id).first().amount_correct_answers
+    print(old_amount)
+    Students.objects.filter(telegram_id=student_id).update(amount_correct_answers=old_amount + value)
+
+
+@sync_to_async()
+def get_correct_answers(student_id):
+    return Students.objects.filter(telegram_id=student_id).first()
+
+@sync_to_async()
+def drop_correct_answers(student_id):
+    Students.objects.filter(telegram_id=student_id).update(amount_correct_answers=0)

@@ -65,6 +65,12 @@ class Students(CreatedModel):
         verbose_name='Группа'
     )
 
+    amount_correct_answers = models.IntegerField(
+        verbose_name='Количество правильных ответов',
+        help_text='Количество правильных ответов',
+        default=0
+    )
+
     def __str__(self):
         return self.name
 
@@ -183,4 +189,8 @@ class Tests(models.Model):
 
     teacher_id = models.BigIntegerField(
 
+    )
+    questions = models.CharField(
+        max_length=1000,
+        null=True
     )

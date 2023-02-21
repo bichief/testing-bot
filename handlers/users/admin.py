@@ -12,7 +12,7 @@ from loader import dp
 from states.start_student_test import StartTesting
 from utils.db_api.db_commands import get_all_groups, update_tests_group, get_lessons, update_tests_lesson, \
     get_categories, update_category, get_categories_test, delete_test_row, get_test_teacher_id, get_students_group, \
-    get_all_categories
+    get_all_categories, add_questions_test
 
 
 @dp.message_handler(Command('admin'))
@@ -62,7 +62,6 @@ async def get_admin_lesson(call: types.CallbackQuery):
 @dp.callback_query_handler(Text(endswith='true'))
 async def change_state_category(call: types.CallbackQuery):
     category = call.data.split('_')[1]
-
     lesson = await update_category(telegram_id=call.from_user.id, category=category)
     keyboard = await edited_categories_keyboard(category_true=category, lesson=lesson)
 
@@ -80,6 +79,7 @@ async def pre_check_test(call: types.CallbackQuery):
     data = await get_test_teacher_id(call.from_user.id)
     categories = data.categories.split(" ")
     del categories[0]
+    await add_questions_test(categories, call.from_user.id)
     good_categories = await get_all_categories(categories)
 
     await call.message.edit_text(f'Тестирование для группы {data.group}\n'
@@ -93,11 +93,21 @@ async def start_testing(call: types.CallbackQuery):
     data = await get_test_teacher_id(call.from_user.id)
     students = await get_students_group(data.group)
     keyboard = await go_test(test_id=data.id)
+
     await call.message.edit_text('Тестирование было успешно начато!\n'
                                  'Начинаю рассылку по студентам')
     for i in range(len(students)):
-        state = dp.current_state(user=students[i].telegram_id)
-        await state.set_state(StartTesting.test)
+        state = dp.current_state(chat=students[i].telegram_id, user=students[i].telegram_id)
+        await state.set_state(StartTesting.test.state)
+
+        await state.update_data(
+            {
+                'array_questions': data.questions,
+                'teacher_id': call.from_user.id
+            }
+
+        )
+
         try:
             await dp.bot.send_message(
                 chat_id=students[i].telegram_id,
